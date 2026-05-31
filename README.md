@@ -6,7 +6,7 @@ A dynamic student grade portal that uses Google Sheets as the database, Google A
 
 - Google Sheet: each sheet tab is one subject, for example `Programming in Python (Section 1)`.
 - Google Apps Script: generates per-student passwords, emails unsent students, validates `Subject + PRN/Application ID + Password`, detects columns dynamically, and returns the matching row as JSON.
-- Frontend: loads subject names from sheet tabs, logs in with subject plus PRN or Application ID and password, stores the session in `sessionStorage`, and generates dashboard cards from whatever columns the sheet returns.
+- Frontend: loads subject names and PRN/Application ID options from sheet tabs, logs in with subject plus PRN or Application ID and password, stores the session in `sessionStorage`, and generates dashboard cards from whatever columns the sheet returns.
 
 ## Setup
 
@@ -54,8 +54,10 @@ https://007arjungangwar.github.io/StudentGradePortal/
 ## Sheet Rules
 
 - The first row must contain column headers.
-- One header must contain `PRN`, for example `PRN`, `Prn Number`, or `Student PRN`.
-- Students can also log in with an Application ID when a header contains `Application`, `Application ID`, `Application No`, or `Application Number`.
+- At least one header must contain `PRN` or an application identifier.
+- PRN headers can be named `PRN`, `Prn Number`, or `Student PRN`.
+- Application ID headers can be named `Application`, `Application ID`, `Application No`, or `Application Number`.
+- The login page automatically loads PRN/Application ID choices after a subject is selected.
 - One header must contain `Email`, for example `Email`, `Email ID`, or `Student Email`.
 - Every sheet tab name becomes a subject option on the login page.
 - Teachers can add, remove, or rename any other columns without frontend code changes.

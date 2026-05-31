@@ -618,7 +618,7 @@
             <div class="login-box">
                 <div class="section-title">
                     <h2>Student login</h2>
-                    <p>Select your subject, then enter your PRN/Application ID and personal password.</p>
+                    <p>Select your subject, then choose your PRN/Application ID and enter your personal password.</p>
                 </div>
 
                 <form id="loginForm">
@@ -630,8 +630,10 @@
                     </div>
 
                     <div>
-                        <label for="prn">PRN / Application ID</label>
-                        <input id="prn" name="identifier" type="text" autocomplete="username" placeholder="Enter PRN or Application ID" required>
+                        <label for="identifier">PRN / Application ID</label>
+                        <select id="identifier" name="identifier" required disabled>
+                            <option value="">Select subject first</option>
+                        </select>
                     </div>
 
                     <div>
@@ -702,13 +704,14 @@
 
     <script>
         // Replace this value after deploying Code.gs as a Google Apps Script Web App.
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzcTCXRsGdySkCPkcoq5G2AdDcDZhLXueY5yoIMoyVSCN6F6zbevLdihr4HdKljwsST/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRfMAsBivePSXsxCNsAU2B6eM6nSQEsh929bxy4FIZ1B9DM6sNlZJSY08ksI7u8-Fy/exec';
         const PENDING_VALUE = 'Pending';
 
         const loginPanel = document.getElementById('loginPanel');
         const dashboardPanel = document.getElementById('dashboardPanel');
         const loginForm = document.getElementById('loginForm');
         const subjectSelect = document.getElementById('subject');
+        const identifierSelect = document.getElementById('identifier');
         const loginButton = document.getElementById('loginButton');
         const refreshButton = document.getElementById('refreshButton');
         const logoutButton = document.getElementById('logoutButton');
@@ -724,14 +727,19 @@
         const detailCards = document.getElementById('detailCards');
         const performanceCount = document.getElementById('performanceCount');
         const detailCount = document.getElementById('detailCount');
+        let identifierLoadToken = 0;
 
         loginForm.addEventListener('submit', login);
+        subjectSelect.addEventListener('change', () => loadIdentifiers(subjectSelect.value.trim()));
         refreshButton.addEventListener('click', () => refreshStudentData({ silent: false }));
         logoutButton.addEventListener('click', logout);
         window.addEventListener('load', initializeApp);
 
         async function initializeApp() {
             await loadSubjects();
+            if (subjectSelect.value) {
+                await loadIdentifiers(subjectSelect.value);
+            }
             await restoreSession();
         }
 
@@ -765,11 +773,104 @@
             }
         }
 
+        async function loadIdentifiers(subject) {
+            const loadToken = ++identifierLoadToken;
+            resetIdentifierSelect(subject ? 'Loading PRN/Application IDs...' : 'Select subject first', true);
+
+            if (!subject) {
+                return;
+            }
+
+            try {
+                const result = await fetchPortalApi({
+                    action: 'identifiers',
+                    subject
+                });
+
+                if (loadToken !== identifierLoadToken || subject !== subjectSelect.value.trim()) {
+                    return;
+                }
+
+                const identifiers = result.data && Array.isArray(result.data.identifiers)
+                    ? result.data.identifiers
+                    : [];
+
+                if (!identifiers.length) {
+                    resetIdentifierSelect('No PRN/Application IDs found', true);
+                    return;
+                }
+
+                identifierSelect.innerHTML = '<option value="">Select PRN/Application ID</option>';
+
+                identifiers.forEach((identifier) => {
+                    const option = document.createElement('option');
+                    option.value = getIdentifierOptionKey(identifier);
+                    option.dataset.value = identifier.value || '';
+                    option.dataset.type = identifier.type || '';
+                    option.textContent = identifier.label || identifier.value;
+                    identifierSelect.appendChild(option);
+                });
+
+                identifierSelect.disabled = false;
+
+                const savedLoginId = sessionStorage.getItem('studentLoginId') || sessionStorage.getItem('studentPrn');
+                const savedIdentifierType = sessionStorage.getItem('studentIdentifierType') || '';
+                const savedOption = Array.from(identifierSelect.options).find((option) => {
+                    const optionLoginId = option.dataset.value || option.value;
+                    const optionType = option.dataset.type || '';
+                    return optionLoginId === savedLoginId && (!savedIdentifierType || optionType === savedIdentifierType);
+                });
+
+                if (savedOption) {
+                    identifierSelect.value = savedOption.value;
+                }
+            } catch (error) {
+                if (loadToken !== identifierLoadToken) {
+                    return;
+                }
+
+                console.error(error);
+                resetIdentifierSelect('Unable to load IDs', true);
+                showMessage(error.message || 'Unable to load PRN/Application IDs.', 'error');
+            }
+        }
+
+        function resetIdentifierSelect(label, disabled) {
+            identifierSelect.innerHTML = '';
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = label;
+            identifierSelect.appendChild(option);
+            identifierSelect.disabled = disabled;
+        }
+
+        function getIdentifierOptionKey(identifier) {
+            return identifier.key || `${identifier.type || 'Identifier'}:${identifier.value || ''}`;
+        }
+
+        function getSelectedIdentifier() {
+            const option = identifierSelect.options[identifierSelect.selectedIndex];
+
+            if (!option) {
+                return {
+                    value: '',
+                    type: ''
+                };
+            }
+
+            return {
+                value: String(option.dataset.value || option.value || '').trim(),
+                type: option.dataset.type || ''
+            };
+        }
+
         async function login(event) {
             event.preventDefault();
 
             const subject = subjectSelect.value.trim();
-            const loginId = document.getElementById('prn').value.trim();
+            const selectedIdentifier = getSelectedIdentifier();
+            const loginId = selectedIdentifier.value;
+            const identifierType = selectedIdentifier.type;
             const password = document.getElementById('password').value;
 
             if (!subject) {
@@ -778,7 +879,7 @@
             }
 
             if (!loginId || !password) {
-                showMessage('Please enter PRN/Application ID and password.', 'error');
+                showMessage('Please choose your PRN/Application ID and enter your password.', 'error');
                 return;
             }
 
@@ -786,9 +887,10 @@
             showMessage('Checking your record...', 'success');
 
             try {
-                const result = await fetchStudentRecord(subject, loginId, password);
+                const result = await fetchStudentRecord(subject, loginId, password, identifierType);
                 sessionStorage.setItem('studentSubject', subject);
                 sessionStorage.setItem('studentLoginId', loginId);
+                sessionStorage.setItem('studentIdentifierType', identifierType);
                 sessionStorage.setItem('studentPrn', loginId);
                 sessionStorage.setItem('studentPassword', password);
                 sessionStorage.setItem('studentData', JSON.stringify(result.data));
@@ -803,12 +905,12 @@
             }
         }
 
-        async function fetchStudentRecord(subject, loginId, password) {
+        async function fetchStudentRecord(subject, loginId, password, identifierType) {
             return fetchPortalApi({
                 action: 'login',
                 subject,
                 identifier: loginId,
-                prn: loginId,
+                identifierType,
                 password
             });
         }
@@ -828,7 +930,7 @@
                 throw new Error(result.message || 'The portal service returned an error.');
             }
 
-            if (!result.success || !result.data) {
+            if (!result.success) {
                 throw new Error(result.message || 'Invalid login. Please check your PRN/Application ID and password.');
             }
 
@@ -857,7 +959,7 @@
             const prnEntry = entries.find(([key]) => normalizeKey(key).includes('prn'));
             const nameEntry = findEntry(entries, ['name', 'studentname', 'fullname']);
             const emailEntry = findEntry(entries, ['email', 'emailid', 'mail']);
-            const applicationEntry = findEntry(entries, ['applicationno', 'applicationnumber', 'application']);
+            const applicationEntry = findEntry(entries, ['applicationid', 'applicationno', 'applicationnumber', 'application', 'appid', 'appno']);
             const totalEntry = findEntry(entries, ['totaloutof100', 'total', 'totalmarks', 'percentage']);
 
             performanceCards.innerHTML = '';
@@ -873,8 +975,12 @@
             studentName.textContent = displayName;
             studentMeta.textContent = buildStudentMeta(displayPrn, displayEmail, displayApplication);
             lastUpdated.textContent = formatTimestamp(new Date());
-            recordSummary.textContent = prnEntry
-                ? `Fresh record loaded for ${displayPrn}`
+            const displayIdentifier = displayPrn && displayPrn !== PENDING_VALUE
+                ? displayPrn
+                : displayApplication;
+
+            recordSummary.textContent = displayIdentifier && displayIdentifier !== PENDING_VALUE
+                ? `Fresh record loaded for ${displayIdentifier}`
                 : 'Fresh record loaded from Google Sheets';
 
             addSummaryPill('Fields', entries.length);
@@ -1018,6 +1124,7 @@
         async function refreshStudentData({ silent }) {
             const subject = sessionStorage.getItem('studentSubject');
             const loginId = sessionStorage.getItem('studentLoginId') || sessionStorage.getItem('studentPrn');
+            const identifierType = sessionStorage.getItem('studentIdentifierType') || '';
             const password = sessionStorage.getItem('studentPassword');
 
             if (!subject || !loginId || !password) {
@@ -1030,9 +1137,10 @@
             refreshButton.textContent = 'Refreshing...';
 
             try {
-                const result = await fetchStudentRecord(subject, loginId, password);
+                const result = await fetchStudentRecord(subject, loginId, password, identifierType);
                 sessionStorage.setItem('studentData', JSON.stringify(result.data));
                 sessionStorage.setItem('studentLoginId', loginId);
+                sessionStorage.setItem('studentIdentifierType', identifierType);
                 sessionStorage.setItem('isLoggedIn', 'true');
                 showDashboard(result.data);
 
@@ -1056,9 +1164,11 @@
             sessionStorage.removeItem('isLoggedIn');
             sessionStorage.removeItem('studentSubject');
             sessionStorage.removeItem('studentLoginId');
+            sessionStorage.removeItem('studentIdentifierType');
             sessionStorage.removeItem('studentPrn');
             sessionStorage.removeItem('studentPassword');
             loginForm.reset();
+            resetIdentifierSelect('Select subject first', true);
             dashboardPanel.style.display = 'none';
             loginPanel.style.display = 'grid';
             showMessage('You have been logged out.', 'success');
