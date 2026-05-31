@@ -223,14 +223,16 @@
             justify-content: space-between;
             gap: 18px;
             align-items: center;
-            padding: 24px;
+            padding: 22px 24px;
             color: #ffffff;
-            background: linear-gradient(135deg, #0f172a, #155e75 62%, #7f1d1d);
+            background:
+                linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(21, 94, 117, 0.92)),
+                url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80") center/cover;
         }
 
         .dashboard-header h1 {
             margin: 0 0 5px;
-            font-size: clamp(1.5rem, 4vw, 2.3rem);
+            font-size: clamp(1.7rem, 4vw, 2.65rem);
             letter-spacing: 0;
         }
 
@@ -239,36 +241,170 @@
             color: rgba(255, 255, 255, 0.76);
         }
 
+        .eyebrow {
+            display: block;
+            margin-bottom: 8px;
+            color: #bae6fd;
+            font-size: 0.78rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex: 0 0 auto;
+        }
+
+        .button.ghost {
+            width: auto;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.13);
+            border: 1px solid rgba(255, 255, 255, 0.32);
+        }
+
+        .button.ghost:hover {
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22);
+        }
+
         .dashboard-body {
+            display: grid;
+            gap: 22px;
             padding: 24px;
-            background: rgba(248, 250, 252, 0.9);
+            background:
+                linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(239, 246, 255, 0.92)),
+                #f8fafc;
+        }
+
+        .student-overview {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: 18px;
+            align-items: center;
+            border: 1px solid rgba(148, 163, 184, 0.34);
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 20px;
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.07);
+        }
+
+        .student-avatar {
+            width: 72px;
+            height: 72px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary-dark), var(--accent));
+            font-size: 1.45rem;
+            font-weight: 950;
+        }
+
+        .student-title {
+            min-width: 0;
+        }
+
+        .student-title span,
+        .sync-box span,
+        .section-heading span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.76rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .student-title h2 {
+            margin: 5px 0 8px;
+            font-size: clamp(1.35rem, 3vw, 2rem);
+            letter-spacing: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .student-title p {
+            margin: 0;
+            color: #475569;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .sync-box {
+            min-width: 150px;
+            border-left: 1px solid var(--line);
+            padding-left: 18px;
+        }
+
+        .sync-box strong {
+            display: block;
+            margin-top: 6px;
+            color: var(--ink);
+            font-size: 0.96rem;
         }
 
         .summary-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 18px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
         }
 
         .summary-pill {
             border: 1px solid var(--line);
-            border-radius: 999px;
+            border-radius: 8px;
             background: #ffffff;
-            padding: 8px 12px;
+            padding: 16px;
             color: #475569;
-            font-size: 0.88rem;
-            font-weight: 800;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .summary-pill span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.74rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .summary-pill strong {
+            display: block;
+            margin-top: 8px;
+            color: var(--ink);
+            font-size: 1.45rem;
+            line-height: 1;
+        }
+
+        .record-section {
+            display: grid;
+            gap: 14px;
+        }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: end;
+        }
+
+        .section-heading h2 {
+            margin: 4px 0 0;
+            font-size: 1.18rem;
+            letter-spacing: 0;
+        }
+
+        .section-heading p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.9rem;
         }
 
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
             gap: 14px;
         }
 
         .data-card {
-            min-height: 128px;
+            min-height: 124px;
             display: grid;
             align-content: space-between;
             gap: 18px;
@@ -277,6 +413,7 @@
             background: #ffffff;
             padding: 18px;
             overflow: hidden;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
             animation: cardIn 360ms ease-out both;
         }
 
@@ -293,8 +430,10 @@
         }
 
         .data-card.performance {
-            border-color: rgba(37, 99, 235, 0.34);
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(15, 118, 110, 0.12)), #ffffff;
+            border-color: rgba(37, 99, 235, 0.28);
+            background:
+                linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(15, 118, 110, 0.1)),
+                #ffffff;
         }
 
         .data-card.pending-card {
@@ -354,7 +493,41 @@
                 flex-direction: column;
             }
 
+            .header-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .student-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .student-avatar {
+                width: 64px;
+                height: 64px;
+            }
+
+            .sync-box {
+                border-left: 0;
+                border-top: 1px solid var(--line);
+                padding-left: 0;
+                padding-top: 16px;
+            }
+
+            .summary-bar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .section-heading {
+                align-items: start;
+                flex-direction: column;
+            }
+
             .button.secondary {
+                width: 100%;
+            }
+
+            .button.ghost {
                 width: 100%;
             }
         }
@@ -395,15 +568,53 @@
         <section id="dashboardPanel" class="panel dashboard">
             <header class="dashboard-header">
                 <div>
+                    <span class="eyebrow">College Academic Portal</span>
                     <h1>Student Dashboard</h1>
                     <p id="recordSummary">Live record from Google Sheets</p>
                 </div>
-                <button id="logoutButton" class="button secondary" type="button">Logout</button>
+                <div class="header-actions">
+                    <button id="refreshButton" class="button ghost" type="button">Refresh</button>
+                    <button id="logoutButton" class="button secondary" type="button">Logout</button>
+                </div>
             </header>
 
             <div class="dashboard-body">
+                <section class="student-overview">
+                    <div id="studentAvatar" class="student-avatar">SG</div>
+                    <div class="student-title">
+                        <span>Student Profile</span>
+                        <h2 id="studentName">Student</h2>
+                        <p id="studentMeta">Academic record loaded from Google Sheets</p>
+                    </div>
+                    <div class="sync-box">
+                        <span>Last Updated</span>
+                        <strong id="lastUpdated">Just now</strong>
+                    </div>
+                </section>
+
                 <div id="summaryBar" class="summary-bar"></div>
-                <div id="cards" class="cards"></div>
+
+                <section id="performanceSection" class="record-section">
+                    <div class="section-heading">
+                        <div>
+                            <span>Academic Performance</span>
+                            <h2>Marks and grades</h2>
+                        </div>
+                        <p id="performanceCount">0 fields</p>
+                    </div>
+                    <div id="performanceCards" class="cards"></div>
+                </section>
+
+                <section class="record-section">
+                    <div class="section-heading">
+                        <div>
+                            <span>Student Details</span>
+                            <h2>Profile and records</h2>
+                        </div>
+                        <p id="detailCount">0 fields</p>
+                    </div>
+                    <div id="detailCards" class="cards"></div>
+                </section>
             </div>
         </section>
     </main>
@@ -417,13 +628,23 @@
         const dashboardPanel = document.getElementById('dashboardPanel');
         const loginForm = document.getElementById('loginForm');
         const loginButton = document.getElementById('loginButton');
+        const refreshButton = document.getElementById('refreshButton');
         const logoutButton = document.getElementById('logoutButton');
         const message = document.getElementById('message');
-        const cards = document.getElementById('cards');
         const summaryBar = document.getElementById('summaryBar');
         const recordSummary = document.getElementById('recordSummary');
+        const studentAvatar = document.getElementById('studentAvatar');
+        const studentName = document.getElementById('studentName');
+        const studentMeta = document.getElementById('studentMeta');
+        const lastUpdated = document.getElementById('lastUpdated');
+        const performanceSection = document.getElementById('performanceSection');
+        const performanceCards = document.getElementById('performanceCards');
+        const detailCards = document.getElementById('detailCards');
+        const performanceCount = document.getElementById('performanceCount');
+        const detailCount = document.getElementById('detailCount');
 
         loginForm.addEventListener('submit', login);
+        refreshButton.addEventListener('click', () => refreshStudentData({ silent: false }));
         logoutButton.addEventListener('click', logout);
         window.addEventListener('load', restoreSession);
 
@@ -442,35 +663,41 @@
             showMessage('Checking your record...', 'success');
 
             try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8'
-                    },
-                    body: JSON.stringify({ prn, password })
-                });
-
-                const result = await parseJsonResponse(response);
-
-                if (!response.ok) {
-                    throw new Error(result.message || 'The portal service returned an error.');
-                }
-
-                if (!result.success || !result.data) {
-                    showMessage(result.message || 'Invalid login. Please check your PRN and password.', 'error');
-                    return;
-                }
-
+                const result = await fetchStudentRecord(prn, password);
+                sessionStorage.setItem('studentPrn', prn);
+                sessionStorage.setItem('studentPassword', password);
                 sessionStorage.setItem('studentData', JSON.stringify(result.data));
                 sessionStorage.setItem('isLoggedIn', 'true');
                 showDashboard(result.data);
                 clearMessage();
             } catch (error) {
                 console.error(error);
-                showMessage('Network error. Check the Apps Script deployment URL and access permissions.', 'error');
+                showMessage(error.message || 'Network error. Check the Apps Script deployment URL and access permissions.', 'error');
             } finally {
                 setLoading(false);
             }
+        }
+
+        async function fetchStudentRecord(prn, password) {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8'
+                },
+                body: JSON.stringify({ prn, password })
+            });
+
+            const result = await parseJsonResponse(response);
+
+            if (!response.ok) {
+                throw new Error(result.message || 'The portal service returned an error.');
+            }
+
+            if (!result.success || !result.data) {
+                throw new Error(result.message || 'Invalid login. Please check your PRN and password.');
+            }
+
+            return result;
         }
 
         async function parseJsonResponse(response) {
@@ -490,28 +717,46 @@
         function showDashboard(data) {
             const entries = getStudentEntries(data);
             const pendingCount = entries.filter(([, value]) => isPending(value)).length;
+            const performanceEntries = entries.filter(([label]) => isPerformanceColumn(label));
+            const detailEntries = entries.filter(([label]) => !isPerformanceColumn(label));
             const prnEntry = entries.find(([key]) => normalizeKey(key).includes('prn'));
+            const nameEntry = findEntry(entries, ['name', 'studentname', 'fullname']);
+            const emailEntry = findEntry(entries, ['email', 'emailid', 'mail']);
+            const applicationEntry = findEntry(entries, ['applicationno', 'applicationnumber', 'application']);
+            const totalEntry = findEntry(entries, ['totaloutof100', 'total', 'totalmarks', 'percentage']);
 
-            cards.innerHTML = '';
+            performanceCards.innerHTML = '';
+            detailCards.innerHTML = '';
             summaryBar.innerHTML = '';
 
+            const displayName = normalizeDisplayValue(nameEntry ? nameEntry[1] : 'Student');
+            const displayPrn = normalizeDisplayValue(prnEntry ? prnEntry[1] : '');
+            const displayEmail = normalizeDisplayValue(emailEntry ? emailEntry[1] : '');
+            const displayApplication = normalizeDisplayValue(applicationEntry ? applicationEntry[1] : '');
+
+            studentAvatar.textContent = getInitials(displayName);
+            studentName.textContent = displayName;
+            studentMeta.textContent = buildStudentMeta(displayPrn, displayEmail, displayApplication);
+            lastUpdated.textContent = formatTimestamp(new Date());
             recordSummary.textContent = prnEntry
-                ? `Record loaded for ${prnEntry[1]}`
-                : 'Record loaded from Google Sheets';
+                ? `Fresh record loaded for ${displayPrn}`
+                : 'Fresh record loaded from Google Sheets';
 
-            addSummaryPill(`${entries.length} fields`);
-            addSummaryPill(`${pendingCount} pending`);
+            addSummaryPill('Fields', entries.length);
+            addSummaryPill('Pending', pendingCount);
+            addSummaryPill('Performance', performanceEntries.length);
+            addSummaryPill('Total', totalEntry ? normalizeDisplayValue(totalEntry[1]) : 'N/A');
 
-            entries.forEach(([label, value], index) => {
-                const cleanValue = normalizeDisplayValue(value);
-                const card = document.createElement('article');
-                card.className = `data-card ${isPerformanceColumn(label) ? 'performance' : ''} ${isPending(cleanValue) ? 'pending-card' : ''}`;
-                card.style.animationDelay = `${Math.min(index * 35, 420)}ms`;
-                card.innerHTML = `
-                    <div class="label">${escapeHtml(label)}</div>
-                    <div class="value">${escapeHtml(cleanValue)}</div>
-                `;
-                cards.appendChild(card);
+            performanceSection.style.display = performanceEntries.length ? 'grid' : 'none';
+            performanceCount.textContent = `${performanceEntries.length} fields`;
+            detailCount.textContent = `${detailEntries.length} fields`;
+
+            performanceEntries.forEach(([label, value], index) => {
+                performanceCards.appendChild(createDataCard(label, value, index, true));
+            });
+
+            detailEntries.forEach(([label, value], index) => {
+                detailCards.appendChild(createDataCard(label, value, index, false));
             });
 
             loginPanel.style.display = 'none';
@@ -585,35 +830,140 @@
             return PENDING_VALUE;
         }
 
-        function addSummaryPill(text) {
+        function createDataCard(label, value, index, isPerformance) {
+            const cleanValue = normalizeDisplayValue(value);
+            const card = document.createElement('article');
+            card.className = `data-card ${isPerformance ? 'performance' : ''} ${isPending(cleanValue) ? 'pending-card' : ''}`;
+            card.style.animationDelay = `${Math.min(index * 35, 420)}ms`;
+            card.innerHTML = `
+                <div class="label">${escapeHtml(label)}</div>
+                <div class="value">${escapeHtml(cleanValue)}</div>
+            `;
+            return card;
+        }
+
+        function addSummaryPill(label, value) {
             const pill = document.createElement('span');
             pill.className = 'summary-pill';
-            pill.textContent = text;
+            pill.innerHTML = `
+                <span>${escapeHtml(label)}</span>
+                <strong>${escapeHtml(value)}</strong>
+            `;
             summaryBar.appendChild(pill);
         }
 
-        function restoreSession() {
+        async function restoreSession() {
             const isLoggedIn = sessionStorage.getItem('isLoggedIn');
             const studentData = sessionStorage.getItem('studentData');
+            const prn = sessionStorage.getItem('studentPrn');
+            const password = sessionStorage.getItem('studentPassword');
 
-            if (isLoggedIn !== 'true' || !studentData) {
+            if (isLoggedIn !== 'true') {
                 return;
             }
 
-            try {
-                showDashboard(JSON.parse(studentData));
-            } catch (error) {
+            if (studentData) {
+                try {
+                    showDashboard(JSON.parse(studentData));
+                } catch (error) {
+                    logout();
+                    return;
+                }
+            }
+
+            if (prn && password) {
+                await refreshStudentData({ silent: true });
+                return;
+            }
+
+            logout();
+        }
+
+        async function refreshStudentData({ silent }) {
+            const prn = sessionStorage.getItem('studentPrn');
+            const password = sessionStorage.getItem('studentPassword');
+
+            if (!prn || !password) {
                 logout();
+                showMessage('Please log in again to refresh live Sheet data.', 'error');
+                return;
+            }
+
+            refreshButton.disabled = true;
+            refreshButton.textContent = 'Refreshing...';
+
+            try {
+                const result = await fetchStudentRecord(prn, password);
+                sessionStorage.setItem('studentData', JSON.stringify(result.data));
+                sessionStorage.setItem('isLoggedIn', 'true');
+                showDashboard(result.data);
+
+                if (!silent) {
+                    recordSummary.textContent = `Updated from Google Sheets at ${formatTimestamp(new Date())}`;
+                }
+            } catch (error) {
+                console.error(error);
+
+                recordSummary.textContent = silent
+                    ? 'Showing saved session. Live refresh was not available.'
+                    : error.message || 'Unable to refresh live Sheet data.';
+            } finally {
+                refreshButton.disabled = false;
+                refreshButton.textContent = 'Refresh';
             }
         }
 
         function logout() {
             sessionStorage.removeItem('studentData');
             sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('studentPrn');
+            sessionStorage.removeItem('studentPassword');
             loginForm.reset();
             dashboardPanel.style.display = 'none';
             loginPanel.style.display = 'grid';
             showMessage('You have been logged out.', 'success');
+        }
+
+        function findEntry(entries, aliases) {
+            return entries.find(([label]) => aliases.includes(normalizeKey(label)));
+        }
+
+        function buildStudentMeta(prn, email, application) {
+            const parts = [];
+
+            if (prn && prn !== PENDING_VALUE) {
+                parts.push(`PRN: ${prn}`);
+            }
+
+            if (application && application !== PENDING_VALUE) {
+                parts.push(`Application: ${application}`);
+            }
+
+            if (email && email !== PENDING_VALUE) {
+                parts.push(email);
+            }
+
+            return parts.length ? parts.join(' | ') : 'Academic record loaded from Google Sheets';
+        }
+
+        function getInitials(name) {
+            const words = String(name || 'Student')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+            return words
+                .slice(0, 2)
+                .map((word) => word[0])
+                .join('')
+                .toUpperCase() || 'SG';
+        }
+
+        function formatTimestamp(date) {
+            return date.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
         }
 
         function isPerformanceColumn(label) {
