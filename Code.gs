@@ -5,7 +5,7 @@
  * - Every sheet tab is treated as one subject.
  * - Run sendStudentPasswords() manually from Apps Script to create passwords,
  *   email students, and mark Email_send as Send.
- * - Students log in with Subject + PRN + their personal password.
+ * - Students log in with Subject + PRN/Application ID + their personal password.
  * - The dashboard never returns internal Password or Email_send columns.
  */
 
@@ -48,15 +48,21 @@ function doGet() {
 
 function handleLogin(request) {
   const subject = String(request.subject || '').trim();
-  const prn = String(request.prn || '').trim();
+  const identifier = String(
+    request.identifier ||
+    request.prn ||
+    request.applicationId ||
+    request.application_id ||
+    ''
+  ).trim();
   const password = String(request.password || '');
 
   if (!subject) {
     return jsonResponse(false, null, 'Please select a subject.');
   }
 
-  if (!prn || !password) {
-    return jsonResponse(false, null, 'Please enter both PRN and password.');
+  if (!identifier || !password) {
+    return jsonResponse(false, null, 'Please enter PRN/Application ID and password.');
   }
 
   const sheet = getTargetSheet(subject);
@@ -73,29 +79,30 @@ function handleLogin(request) {
 
   const headers = buildHeaders(values[0]);
   const prnIndex = findPrnColumn(headers);
+  const applicationIndex = findApplicationColumn(headers);
   const passwordIndex = findPasswordColumn(headers);
 
-  if (prnIndex === -1) {
-    return jsonResponse(false, null, 'PRN column not found for this subject.');
+  if (prnIndex === -1 && applicationIndex === -1) {
+    return jsonResponse(false, null, 'PRN/Application ID column not found for this subject.');
   }
 
   if (passwordIndex === -1) {
     return jsonResponse(false, null, 'Password column not found. Please run sendStudentPasswords() first.');
   }
 
-  const requestedPrn = normalizeValue(prn);
+  const requestedIdentifier = normalizeValue(identifier);
   const studentRow = values.slice(1).find(function(row) {
-    return normalizeValue(row[prnIndex]) === requestedPrn;
+    return rowMatchesLoginIdentifier(row, prnIndex, applicationIndex, requestedIdentifier);
   });
 
   if (!studentRow) {
-    return jsonResponse(false, null, 'PRN not found.');
+    return jsonResponse(false, null, 'PRN/Application ID not found.');
   }
 
   const storedPassword = String(studentRow[passwordIndex] || '').trim();
 
   if (!storedPassword) {
-    return jsonResponse(false, null, 'Password has not been generated for this PRN yet.');
+    return jsonResponse(false, null, 'Password has not been generated for this record yet.');
   }
 
   if (password !== storedPassword) {
@@ -353,6 +360,27 @@ function findPrnColumn(headers) {
     const normalized = normalizeHeader(header);
     return normalized === 'prn' || normalized.indexOf('prn') !== -1;
   });
+}
+
+function findApplicationColumn(headers) {
+  return headers.findIndex(function(header) {
+    const normalized = normalizeHeader(header);
+    return normalized === 'applicationid'
+      || normalized === 'applicationno'
+      || normalized === 'applicationnumber'
+      || normalized === 'appid'
+      || normalized === 'appno'
+      || normalized.indexOf('application') !== -1;
+  });
+}
+
+function rowMatchesLoginIdentifier(row, prnIndex, applicationIndex, requestedIdentifier) {
+  return columnMatchesValue(row, prnIndex, requestedIdentifier)
+    || columnMatchesValue(row, applicationIndex, requestedIdentifier);
+}
+
+function columnMatchesValue(row, columnIndex, requestedValue) {
+  return columnIndex !== -1 && normalizeValue(row[columnIndex]) === requestedValue;
 }
 
 function findEmailColumn(headers) {
