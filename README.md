@@ -35,12 +35,13 @@ It will process every sheet tab as a subject:
 - Generates a password only when the password cell is empty.
 - Sends email only when `Email_send` is not `Send`.
 - Treats rows with a blank `Password` as unsent, even if `Email_send` was accidentally copied as `Send`.
+- Logs each sent row, PRN, and recipient email in Apps Script execution output.
 - Marks successful emails as `Send`.
 - Leaves missing/failed emails as `unsend`, so rerunning only retries those rows.
 
 ## Live Preview
 
-https://raw.githack.com/007arjungangwar/StudentGradePortal/main/index.html
+https://007arjungangwar.github.io/StudentGradePortal/
 
 ## GitHub Pages
 

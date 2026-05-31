@@ -16,7 +16,8 @@ const EMAIL_SENT_VALUE = 'Send';
 const EMAIL_UNSENT_VALUE = 'unsend';
 const PENDING_VALUE = 'Pending';
 const PASSWORD_LENGTH = 8;
-const PORTAL_URL = 'https://raw.githack.com/007arjungangwar/StudentGradePortal/main/index.html';
+const PORTAL_URL = 'https://007arjungangwar.github.io/StudentGradePortal/';
+const EMAIL_SENDER_NAME = 'Arjun - Student Grade Portal';
 
 function doPost(e) {
   try {
@@ -121,6 +122,7 @@ function sendPasswordsForSheet(sheet) {
     sent: 0,
     skippedAlreadySent: 0,
     skippedNoEmail: 0,
+    sentRecipients: [],
     errors: []
   };
 
@@ -185,14 +187,27 @@ function sendPasswordsForSheet(sheet) {
         return;
       }
 
+      if (!isValidEmail(email)) {
+        sheet.getRange(sheetRow, emailSendIndex + 1).setValue(EMAIL_UNSENT_VALUE);
+        result.errors.push('Row ' + sheetRow + ': Invalid email address "' + email + '".');
+        return;
+      }
+
       try {
         MailApp.sendEmail({
           to: email,
           subject: 'Student Grade Portal Password - ' + sheet.getName(),
-          body: buildPasswordEmailBody(name, prn, password, sheet.getName())
+          name: EMAIL_SENDER_NAME,
+          body: buildPasswordEmailBody(name, prn, password, sheet.getName()),
+          htmlBody: buildPasswordEmailHtmlBody(name, prn, password, sheet.getName())
         });
         sheet.getRange(sheetRow, emailSendIndex + 1).setValue(EMAIL_SENT_VALUE);
         result.sent++;
+        result.sentRecipients.push({
+          row: sheetRow,
+          prn: prn,
+          email: email
+        });
       } catch (error) {
         sheet.getRange(sheetRow, emailSendIndex + 1).setValue(EMAIL_UNSENT_VALUE);
         result.errors.push('Row ' + sheetRow + ': ' + error.message);
@@ -301,6 +316,15 @@ function buildPasswordEmailBody(name, prn, password, subject) {
   ].join('\n');
 }
 
+function buildPasswordEmailHtmlBody(name, prn, password, subject) {
+  return buildPasswordEmailBody(name, prn, password, subject)
+    .split('\n')
+    .map(function(line) {
+      return escapeHtml(line);
+    })
+    .join('<br>');
+}
+
 function parseRequest(e) {
   if (e && e.postData && e.postData.contents) {
     try {
@@ -367,6 +391,19 @@ function isInternalHeader(header) {
 
 function isEmailAlreadySent(value) {
   return normalizeValue(value) === normalizeValue(EMAIL_SENT_VALUE);
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function generatePassword(length) {
