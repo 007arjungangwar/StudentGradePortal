@@ -2,600 +2,483 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Grade Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Student Grade Portal | Dynamic Dashboard</title>
     <style>
-        :root {
-            --bg: #eef2f7;
-            --surface: #ffffff;
-            --surface-muted: #f7f9fc;
-            --text: #18202f;
-            --muted: #667085;
-            --line: #d9e0ea;
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --success-bg: #eaf7ee;
-            --success-text: #166534;
-            --error-bg: #fbeaea;
-            --error-text: #b42318;
-            --warning-bg: #fff7df;
-            --shadow: 0 18px 50px rgba(24, 32, 47, 0.14);
-        }
-
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
 
         body {
-            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            font-family: Arial, Helvetica, sans-serif;
-            color: var(--text);
-            background:
-                linear-gradient(135deg, rgba(37, 99, 235, 0.09), rgba(22, 163, 74, 0.08)),
-                var(--bg);
-            display: grid;
-            place-items: center;
-            padding: 24px;
+            padding: 20px;
         }
 
-        .shell {
-            width: min(100%, 920px);
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            box-shadow: var(--shadow);
+        /* Login Card */
+        .login-card, .dashboard-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
+            animation: fadeIn 0.5s ease-out;
         }
 
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            gap: 18px;
-            align-items: center;
-            padding: 22px 24px;
-            background: #111827;
-            color: #ffffff;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .brand h1 {
-            margin: 0 0 4px;
-            font-size: clamp(1.35rem, 2vw, 1.75rem);
-            line-height: 1.2;
-            letter-spacing: 0;
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
         }
 
-        .brand p {
-            margin: 0;
-            color: #cbd5e1;
-            font-size: 0.94rem;
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
         }
 
-        .status-pill {
-            flex: 0 0 auto;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            border-radius: 999px;
-            color: #dbeafe;
-            padding: 8px 12px;
-            font-size: 0.82rem;
-            white-space: nowrap;
+        .header p {
+            opacity: 0.9;
+            font-size: 1rem;
         }
 
-        .panel {
-            padding: 26px;
+        .content {
+            padding: 40px;
         }
 
-        .login-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
-            gap: 28px;
-            align-items: start;
+        /* Login Form */
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
         }
 
-        .intro {
-            display: grid;
-            gap: 14px;
-        }
-
-        .intro h2 {
-            margin: 0;
-            font-size: clamp(1.25rem, 2vw, 1.55rem);
-            letter-spacing: 0;
-        }
-
-        .intro p,
-        .help-text {
-            margin: 0;
-            color: var(--muted);
-            line-height: 1.55;
-        }
-
-        .notice {
-            padding: 14px 15px;
-            border: 1px solid #fde68a;
-            border-radius: 8px;
-            background: var(--warning-bg);
-            color: #854d0e;
-            line-height: 1.45;
-            font-size: 0.95rem;
-        }
-
-        form {
-            display: grid;
-            gap: 16px;
+        .form-group {
+            margin-bottom: 25px;
         }
 
         label {
             display: block;
-            margin-bottom: 7px;
-            font-weight: 700;
-            font-size: 0.9rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
         }
 
         input {
             width: 100%;
-            min-height: 46px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 11px 12px;
-            color: var(--text);
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
             font-size: 1rem;
-            background: #ffffff;
-            transition: border-color 160ms ease, box-shadow 160ms ease;
+            transition: all 0.3s;
         }
 
         input:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
-        }
-
-        .button-row {
-            display: flex;
-            gap: 12px;
-            align-items: center;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         button {
-            min-height: 46px;
-            border: 0;
-            border-radius: 8px;
-            padding: 0 16px;
-            background: var(--primary);
-            color: #ffffff;
-            font-size: 0.98rem;
-            font-weight: 700;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 160ms ease, transform 160ms ease;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
         button:hover {
-            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
         button:active {
-            transform: translateY(1px);
-        }
-
-        button:disabled {
-            cursor: wait;
-            opacity: 0.7;
-        }
-
-        .secondary-button {
-            background: #e5e7eb;
-            color: #111827;
-        }
-
-        .secondary-button:hover {
-            background: #d1d5db;
+            transform: translateY(0);
         }
 
         .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
             display: none;
-            margin-top: 16px;
-            border-radius: 8px;
-            padding: 12px 14px;
-            line-height: 1.45;
-            font-size: 0.94rem;
         }
 
         .message.success {
             display: block;
-            background: var(--success-bg);
-            color: var(--success-text);
-            border: 1px solid #bbebc9;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
         .message.error {
             display: block;
-            background: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid #f5c2c0;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
-        .dashboard {
-            display: none;
-        }
-
-        .dashboard-grid {
-            display: grid;
-            gap: 18px;
-        }
-
-        .student-info {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-            padding: 18px;
-            border-radius: 8px;
-            background: var(--surface-muted);
-            border: 1px solid var(--line);
-        }
-
-        .student-info h2 {
-            grid-column: 1 / -1;
-            margin: 0 0 4px;
-            font-size: 1.22rem;
-            letter-spacing: 0;
-        }
-
-        .detail {
-            min-width: 0;
-        }
-
-        .detail span,
-        .mark-label {
-            display: block;
-            color: var(--muted);
-            font-size: 0.78rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .detail strong {
-            display: block;
-            margin-top: 5px;
-            overflow-wrap: anywhere;
-            font-size: 0.95rem;
-        }
-
-        .marks-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .mark-card {
-            min-height: 116px;
-            display: grid;
-            align-content: center;
-            gap: 10px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            background: #ffffff;
-            padding: 16px;
-        }
-
-        .mark-value {
-            color: var(--primary-dark);
-            font-size: clamp(1.55rem, 3vw, 2rem);
-            line-height: 1;
-            font-weight: 800;
-            overflow-wrap: anywhere;
-        }
-
-        .attendance {
+        /* Dashboard */
+        .dashboard-header {
             display: flex;
             justify-content: space-between;
-            gap: 18px;
             align-items: center;
-            border: 1px solid #bbebc9;
-            border-radius: 8px;
-            background: var(--success-bg);
-            color: var(--success-text);
-            padding: 16px 18px;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
         }
 
-        .attendance strong {
-            font-size: 1.45rem;
+        .welcome-text h2 {
+            color: #333;
+            margin-bottom: 5px;
         }
 
+        .welcome-text p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .logout-btn {
+            width: auto;
+            padding: 10px 25px;
+            background: #dc3545;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        /* Dynamic Cards Grid */
+        .records-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .record-card {
+            background: white;
+            border: 2px solid #f0f0f0;
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .record-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .record-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .record-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            word-wrap: break-word;
+        }
+
+        .record-value.pending {
+            color: #ff9800;
+            font-style: italic;
+            font-size: 1rem;
+        }
+
+        /* Special styling for marks */
+        .record-card.marks-card {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-color: #667eea;
+        }
+
+        .record-card.marks-card .record-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #667eea;
+        }
+
+        /* Footer */
         .footer {
-            border-top: 1px solid var(--line);
-            background: var(--surface-muted);
-            color: var(--muted);
-            padding: 14px 24px;
-            font-size: 0.82rem;
+            margin-top: 30px;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #f0f0f0;
+            font-size: 0.85rem;
         }
 
-        @media (max-width: 760px) {
-            body {
-                padding: 14px;
-                align-items: start;
-            }
+        /* Loading Spinner */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
 
-            .topbar,
-            .attendance,
-            .button-row {
-                align-items: stretch;
-                flex-direction: column;
-            }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
 
-            .status-pill {
-                white-space: normal;
-            }
-
-            .panel {
+        /* Responsive */
+        @media (max-width: 768px) {
+            .content {
                 padding: 20px;
             }
-
-            .login-layout,
-            .student-info,
-            .marks-grid {
+            
+            .records-grid {
                 grid-template-columns: 1fr;
             }
-
-            button {
+            
+            .dashboard-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .logout-btn {
                 width: 100%;
             }
         }
     </style>
 </head>
 <body>
-    <main class="shell">
-        <section id="loginCard" class="card">
-            <header class="topbar">
-                <div class="brand">
-                    <h1>Student Grade Portal</h1>
-                    <p>Secure access to academic results</p>
-                </div>
-                <div class="status-pill">Connected to Google Sheet</div>
-            </header>
-
-            <div class="panel login-layout">
-                <div class="intro">
-                    <h2>View your marks and attendance</h2>
-                    <p>Enter your PRN number and password exactly as provided by your department.</p>
-                    <div class="notice">If login does not work, confirm that the Apps Script web app is deployed for "Anyone" access and that the Google Sheet headers match the portal fields.</div>
-                </div>
-
-                <div>
-                    <form id="loginForm">
-                        <div>
-                            <label for="prn">PRN Number</label>
-                            <input type="text" id="prn" name="prn" placeholder="Enter PRN" autocomplete="username" required>
-                        </div>
-
-                        <div>
-                            <label for="password">Password</label>
-                            <input type="password" id="password" name="password" placeholder="Enter password" autocomplete="current-password" required>
-                        </div>
-
-                        <div class="button-row">
-                            <button id="loginButton" type="submit">Login</button>
-                        </div>
-                    </form>
-                    <div id="loginMessage" class="message" role="status" aria-live="polite"></div>
+    <div class="container">
+        <!-- Login Section -->
+        <div id="loginSection" class="login-card">
+            <div class="header">
+                <h1>📚 Student Grade Portal</h1>
+                <p>Secure access to your academic records</p>
+            </div>
+            <div class="content">
+                <div class="login-form">
+                    <div class="form-group">
+                        <label for="prn">PRN Number</label>
+                        <input type="text" id="prn" placeholder="Enter your PRN" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="Enter your password">
+                    </div>
+                    <button onclick="login()" id="loginBtn">Login →</button>
+                    <div id="message" class="message"></div>
                 </div>
             </div>
+            <div class="footer">
+                ⚡ Live data from Google Sheets • Updates reflect instantly
+            </div>
+        </div>
 
-            <footer class="footer">Results are loaded live from the connected Apps Script service.</footer>
-        </section>
-
-        <section id="dashboard" class="card dashboard">
-            <header class="topbar">
-                <div class="brand">
-                    <h1>Student Dashboard</h1>
-                    <p>Your latest academic performance</p>
+        <!-- Dashboard Section (Hidden Initially) -->
+        <div id="dashboardSection" class="dashboard-card" style="display: none;">
+            <div class="header">
+                <h1>🎓 Student Dashboard</h1>
+                <p>Your complete academic profile</p>
+            </div>
+            <div class="content">
+                <div class="dashboard-header">
+                    <div class="welcome-text">
+                        <h2 id="studentName">Welcome, Student!</h2>
+                        <p id="studentInfo">Loading your information...</p>
+                    </div>
+                    <button class="logout-btn" onclick="logout()">🚪 Logout</button>
                 </div>
-                <div class="status-pill">Session active</div>
-            </header>
-
-            <div class="panel dashboard-grid">
-                <div id="studentInfo" class="student-info"></div>
-                <div id="marksGrid" class="marks-grid"></div>
-                <div id="attendanceInfo" class="attendance"></div>
-                <div class="button-row">
-                    <button type="button" class="secondary-button" id="logoutButton">Logout</button>
+                <div id="recordsContainer">
+                    <div class="records-grid" id="dynamicGrid"></div>
                 </div>
             </div>
-
-            <footer class="footer">Refresh the page after Sheet updates to load the latest saved result.</footer>
-        </section>
-    </main>
+            <div class="footer">
+                🔄 Data is fetched live • Any changes in Google Sheet appear immediately
+            </div>
+        </div>
+    </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyKLvOu-f3ZJuTDzq26wNwIMvP5wV-0weFuXPsD-78Cakg65n0E1CZETi4PgQpwtA-X/exec';
-
-        const loginCard = document.getElementById('loginCard');
-        const loginForm = document.getElementById('loginForm');
-        const loginButton = document.getElementById('loginButton');
-        const loginMessage = document.getElementById('loginMessage');
-        const dashboard = document.getElementById('dashboard');
-        const logoutButton = document.getElementById('logoutButton');
-
-        loginForm.addEventListener('submit', login);
-        logoutButton.addEventListener('click', logout);
-
-        async function login(event) {
-            event.preventDefault();
-
-            const prn = document.getElementById('prn').value.trim();
-            const password = document.getElementById('password').value;
-
-            if (!prn || !password) {
-                showMessage('Please enter both PRN and password.', 'error');
-                return;
-            }
-
-            setLoading(true);
-            showMessage('Checking your details...', 'success');
-
-            try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8'
-                    },
-                    body: JSON.stringify({ prn, password })
-                });
-
-                const result = await parseResponse(response);
-
-                if (!response.ok) {
-                    throw new Error(result.message || 'The portal service returned an error.');
-                }
-
-                if (result.success && result.data) {
-                    sessionStorage.setItem('studentData', JSON.stringify(result.data));
-                    sessionStorage.setItem('isLoggedIn', 'true');
-                    showDashboard(result.data);
-                    clearMessage();
-                    return;
-                }
-
-                showMessage(result.message || 'Login failed. Please check your PRN and password.', 'error');
-            } catch (error) {
-                console.error(error);
-                showMessage('Unable to reach the portal service. Please check the Apps Script deployment and try again.', 'error');
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        async function parseResponse(response) {
-            const text = await response.text();
-
-            try {
-                return JSON.parse(text);
-            } catch (error) {
-                return {
-                    success: false,
-                    message: text || 'Invalid response from portal service.'
-                };
-            }
-        }
-
-        function showDashboard(student) {
-            loginCard.style.display = 'none';
-            dashboard.style.display = 'block';
-
-            const name = readField(student, ['name', 'student name', 'studentname']) || 'Student';
-            const prn = readField(student, ['prn', 'prn number']) || '-';
-            const applicationNo = readField(student, ['application no', 'application number', 'application']) || '-';
-            const email = readField(student, ['email', 'email id', 'mail']) || '-';
-            const attendance = formatAttendance(readField(student, ['attendance %', 'attendance', 'attendance percentage']));
-
-            document.getElementById('studentInfo').innerHTML = `
-                <h2>Welcome, ${escapeHtml(name)}</h2>
-                ${detailMarkup('PRN', prn)}
-                ${detailMarkup('Application No', applicationNo)}
-                ${detailMarkup('Email', email)}
-            `;
-
-            const marks = [
-                ['Assignment', readField(student, ['assignment', 'assignment marks'])],
-                ['Mid Semester', readField(student, ['midsem', 'mid sem', 'mid semester'])],
-                ['End Semester', readField(student, ['endsem', 'end sem', 'end semester'])],
-                ['Total', readField(student, ['total', 'total marks'])]
-            ];
-
-            document.getElementById('marksGrid').innerHTML = marks.map(([label, value]) => `
-                <article class="mark-card">
-                    <span class="mark-label">${escapeHtml(label)}</span>
-                    <strong class="mark-value">${escapeHtml(value || '-')}</strong>
-                </article>
-            `).join('');
-
-            document.getElementById('attendanceInfo').innerHTML = `
-                <span>
-                    <span class="mark-label">Attendance Percentage</span>
-                    <span class="help-text">Based on the latest Sheet data</span>
-                </span>
-                <strong>${escapeHtml(attendance)}</strong>
-            `;
-        }
-
-        function detailMarkup(label, value) {
-            return `
-                <div class="detail">
-                    <span>${escapeHtml(label)}</span>
-                    <strong>${escapeHtml(value)}</strong>
-                </div>
-            `;
-        }
-
-        function readField(source, aliases) {
-            const entries = Object.entries(source || {});
-            const normalizedAliases = aliases.map(normalizeKey);
-            const match = entries.find(([key]) => normalizedAliases.includes(normalizeKey(key)));
-
-            if (!match || match[1] === null || match[1] === undefined) {
-                return '';
-            }
-
-            return String(match[1]).trim();
-        }
-
-        function normalizeKey(key) {
-            return String(key).toLowerCase().replace(/[^a-z0-9%]+/g, '');
-        }
-
-        function formatAttendance(value) {
-            if (!value) {
-                return '-';
-            }
-
-            const cleaned = String(value).trim();
-            return cleaned.endsWith('%') ? cleaned : `${cleaned}%`;
-        }
-
-        function logout() {
-            sessionStorage.removeItem('studentData');
-            sessionStorage.removeItem('isLoggedIn');
-            loginCard.style.display = 'block';
-            dashboard.style.display = 'none';
-            loginForm.reset();
-            clearMessage();
-        }
-
-        function showMessage(message, type) {
-            loginMessage.textContent = message;
-            loginMessage.className = `message ${type}`;
-        }
-
-        function clearMessage() {
-            loginMessage.textContent = '';
-            loginMessage.className = 'message';
-        }
-
-        function setLoading(isLoading) {
-            loginButton.disabled = isLoading;
-            loginButton.textContent = isLoading ? 'Checking...' : 'Login';
-        }
-
-        function escapeHtml(value) {
-            const div = document.createElement('div');
-            div.textContent = value || '-';
-            return div.innerHTML;
-        }
-
-        window.addEventListener('load', () => {
+        // IMPORTANT: Replace this with your Apps Script Web App URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzeaIa45hqX0p-5BbU6sHDsccG-tzSbmSjZs74vfKEUfE1etYl6Ud7-36lerHJ056GR/exec';
+        
+        // Check if user is already logged in
+        window.onload = function() {
             const isLoggedIn = sessionStorage.getItem('isLoggedIn');
             const studentData = sessionStorage.getItem('studentData');
-
+            
             if (isLoggedIn === 'true' && studentData) {
                 try {
-                    showDashboard(JSON.parse(studentData));
-                } catch (error) {
+                    const data = JSON.parse(studentData);
+                    showDashboard(data);
+                } catch(e) {
                     logout();
                 }
             }
-        });
+        };
+        
+        async function login() {
+            const prn = document.getElementById('prn').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!prn || !password) {
+                showMessage('Please enter both PRN and password', 'error');
+                return;
+            }
+            
+            // Show loading
+            const loginBtn = document.getElementById('loginBtn');
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<span class="loading"></span> Verifying...';
+            loginBtn.disabled = true;
+            
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prn: prn, password: password })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    // Store student data
+                    sessionStorage.setItem('studentData', JSON.stringify(result.data));
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    sessionStorage.setItem('prn', prn);
+                    
+                    showDashboard(result.data);
+                    showMessage('Login successful!', 'success');
+                } else {
+                    showMessage(result.message || 'Login failed. Please check your credentials.', 'error');
+                }
+            } catch(error) {
+                console.error('Login error:', error);
+                showMessage('Network error. Please check if the Apps Script is deployed correctly.', 'error');
+            } finally {
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        }
+        
+        function showDashboard(studentData) {
+            // Hide login, show dashboard
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            
+            // Get student info
+            const values = studentData.values;
+            const headers = studentData.headers;
+            
+            // Find name (try different common variations)
+            let studentName = values['name'] || values['Name'] || values['student name'] || 'Student';
+            let studentPRN = values['prn'] || values['PRN'] || 'N/A';
+            let studentEmail = values['email'] || values['Email'] || values['email id'] || 'Not provided';
+            
+            // Update welcome section
+            document.getElementById('studentName').innerHTML = `Welcome, ${escapeHtml(studentName)}!`;
+            document.getElementById('studentInfo').innerHTML = `📇 PRN: ${escapeHtml(studentPRN)} | 📧 ${escapeHtml(studentEmail)}`;
+            
+            // Dynamically generate all records
+            const grid = document.getElementById('dynamicGrid');
+            grid.innerHTML = '';
+            
+            // Separate marks columns for special styling
+            const marksKeywords = ['marks', 'score', 'grade', 'assignment', 'midsem', 'endsem', 'exam', 'total', 'percentage'];
+            
+            for (let i = 0; i < headers.length; i++) {
+                const header = headers[i];
+                let value = values[header];
+                
+                // Skip PRN as it's already shown
+                if (header.toLowerCase() === 'prn') continue;
+                
+                // Check if it's a marks-related column
+                const isMarksColumn = marksKeywords.some(keyword => 
+                    header.toLowerCase().includes(keyword)
+                );
+                
+                // Create card
+                const card = document.createElement('div');
+                card.className = `record-card ${isMarksColumn ? 'marks-card' : ''}`;
+                card.style.animationDelay = `${i * 0.05}s`;
+                
+                const isPending = value === '⚠️ Pending';
+                
+                card.innerHTML = `
+                    <span class="record-label">${escapeHtml(header)}</span>
+                    <div class="record-value ${isPending ? 'pending' : ''}">
+                        ${isPending ? '📝 ' + value : escapeHtml(value)}
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            }
+        }
+        
+        function logout() {
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('studentData');
+            sessionStorage.removeItem('prn');
+            
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('dashboardSection').style.display = 'none';
+            document.getElementById('prn').value = '';
+            document.getElementById('password').value = '';
+            showMessage('You have been logged out.', 'success');
+        }
+        
+        function showMessage(msg, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = msg;
+            messageDiv.className = `message ${type}`;
+            
+            setTimeout(() => {
+                if (messageDiv.className.includes(type)) {
+                    messageDiv.style.display = 'none';
+                    messageDiv.className = 'message';
+                }
+            }, 5000);
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '—';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
     </script>
 </body>
 </html>
