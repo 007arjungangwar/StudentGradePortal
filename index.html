@@ -40,7 +40,8 @@
         }
 
         button,
-        input {
+        input,
+        select {
             font: inherit;
         }
 
@@ -146,7 +147,8 @@
             font-weight: 800;
         }
 
-        input {
+        input,
+        select {
             width: 100%;
             min-height: 48px;
             border: 1px solid #cbd5e1;
@@ -157,7 +159,26 @@
             transition: border-color 180ms ease, box-shadow 180ms ease;
         }
 
-        input:focus {
+        select {
+            appearance: none;
+            background:
+                linear-gradient(45deg, transparent 50%, #64748b 50%),
+                linear-gradient(135deg, #64748b 50%, transparent 50%),
+                #ffffff;
+            background-position:
+                calc(100% - 18px) 21px,
+                calc(100% - 12px) 21px,
+                100% 0;
+            background-size:
+                6px 6px,
+                6px 6px,
+                2.5em 100%;
+            background-repeat: no-repeat;
+            padding-right: 46px;
+        }
+
+        input:focus,
+        select:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
@@ -544,10 +565,17 @@
             <div class="login-box">
                 <div class="section-title">
                     <h2>Student Login</h2>
-                    <p>Enter the PRN from the sheet and the master password set in Apps Script.</p>
+                    <p>Select your subject, then enter your PRN and personal password.</p>
                 </div>
 
                 <form id="loginForm">
+                    <div>
+                        <label for="subject">Subject</label>
+                        <select id="subject" name="subject" required>
+                            <option value="">Loading subjects...</option>
+                        </select>
+                    </div>
+
                     <div>
                         <label for="prn">PRN Number</label>
                         <input id="prn" name="prn" type="text" autocomplete="username" placeholder="Enter PRN" required>
@@ -627,6 +655,7 @@
         const loginPanel = document.getElementById('loginPanel');
         const dashboardPanel = document.getElementById('dashboardPanel');
         const loginForm = document.getElementById('loginForm');
+        const subjectSelect = document.getElementById('subject');
         const loginButton = document.getElementById('loginButton');
         const refreshButton = document.getElementById('refreshButton');
         const logoutButton = document.getElementById('logoutButton');
@@ -646,13 +675,54 @@
         loginForm.addEventListener('submit', login);
         refreshButton.addEventListener('click', () => refreshStudentData({ silent: false }));
         logoutButton.addEventListener('click', logout);
-        window.addEventListener('load', restoreSession);
+        window.addEventListener('load', initializeApp);
+
+        async function initializeApp() {
+            await loadSubjects();
+            await restoreSession();
+        }
+
+        async function loadSubjects() {
+            subjectSelect.innerHTML = '<option value="">Loading subjects...</option>';
+
+            try {
+                const result = await fetchPortalApi({ action: 'subjects' });
+                const subjects = result.data && Array.isArray(result.data.subjects)
+                    ? result.data.subjects
+                    : [];
+
+                subjectSelect.innerHTML = '<option value="">Select subject</option>';
+
+                subjects.forEach((subject) => {
+                    const option = document.createElement('option');
+                    option.value = subject;
+                    option.textContent = subject;
+                    subjectSelect.appendChild(option);
+                });
+
+                const savedSubject = sessionStorage.getItem('studentSubject');
+
+                if (savedSubject && subjects.includes(savedSubject)) {
+                    subjectSelect.value = savedSubject;
+                }
+            } catch (error) {
+                console.error(error);
+                subjectSelect.innerHTML = '<option value="">Unable to load subjects</option>';
+                showMessage('Unable to load subjects. Check the Apps Script deployment.', 'error');
+            }
+        }
 
         async function login(event) {
             event.preventDefault();
 
+            const subject = subjectSelect.value.trim();
             const prn = document.getElementById('prn').value.trim();
             const password = document.getElementById('password').value;
+
+            if (!subject) {
+                showMessage('Please select a subject.', 'error');
+                return;
+            }
 
             if (!prn || !password) {
                 showMessage('Please enter both PRN and password.', 'error');
@@ -663,7 +733,8 @@
             showMessage('Checking your record...', 'success');
 
             try {
-                const result = await fetchStudentRecord(prn, password);
+                const result = await fetchStudentRecord(subject, prn, password);
+                sessionStorage.setItem('studentSubject', subject);
                 sessionStorage.setItem('studentPrn', prn);
                 sessionStorage.setItem('studentPassword', password);
                 sessionStorage.setItem('studentData', JSON.stringify(result.data));
@@ -678,13 +749,22 @@
             }
         }
 
-        async function fetchStudentRecord(prn, password) {
+        async function fetchStudentRecord(subject, prn, password) {
+            return fetchPortalApi({
+                action: 'login',
+                subject,
+                prn,
+                password
+            });
+        }
+
+        async function fetchPortalApi(payload) {
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/plain;charset=utf-8'
                 },
-                body: JSON.stringify({ prn, password })
+                body: JSON.stringify(payload)
             });
 
             const result = await parseJsonResponse(response);
@@ -855,6 +935,7 @@
         async function restoreSession() {
             const isLoggedIn = sessionStorage.getItem('isLoggedIn');
             const studentData = sessionStorage.getItem('studentData');
+            const subject = sessionStorage.getItem('studentSubject');
             const prn = sessionStorage.getItem('studentPrn');
             const password = sessionStorage.getItem('studentPassword');
 
@@ -871,7 +952,7 @@
                 }
             }
 
-            if (prn && password) {
+            if (subject && prn && password) {
                 await refreshStudentData({ silent: true });
                 return;
             }
@@ -880,10 +961,11 @@
         }
 
         async function refreshStudentData({ silent }) {
+            const subject = sessionStorage.getItem('studentSubject');
             const prn = sessionStorage.getItem('studentPrn');
             const password = sessionStorage.getItem('studentPassword');
 
-            if (!prn || !password) {
+            if (!subject || !prn || !password) {
                 logout();
                 showMessage('Please log in again to refresh live Sheet data.', 'error');
                 return;
@@ -893,7 +975,7 @@
             refreshButton.textContent = 'Refreshing...';
 
             try {
-                const result = await fetchStudentRecord(prn, password);
+                const result = await fetchStudentRecord(subject, prn, password);
                 sessionStorage.setItem('studentData', JSON.stringify(result.data));
                 sessionStorage.setItem('isLoggedIn', 'true');
                 showDashboard(result.data);
@@ -916,6 +998,7 @@
         function logout() {
             sessionStorage.removeItem('studentData');
             sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('studentSubject');
             sessionStorage.removeItem('studentPrn');
             sessionStorage.removeItem('studentPassword');
             loginForm.reset();

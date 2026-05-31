@@ -1,72 +1,297 @@
 /*
  * Student Grade Portal backend.
  *
- * Deploy this file as a Google Apps Script Web App:
- * - Execute as: Me
- * - Who has access: Anyone
- *
- * The frontend sends { prn, password } as text/plain JSON to avoid browser
- * preflight requests. The script reads the configured sheet, finds the PRN
- * column dynamically, and returns every header/value pair for the student row.
+ * How this works:
+ * - Every sheet tab is treated as one subject.
+ * - Run sendStudentPasswords() manually from Apps Script to create passwords,
+ *   email students, and mark Email_send as Send.
+ * - Students log in with Subject + PRN + their personal password.
+ * - The dashboard never returns internal Password or Email_send columns.
  */
 
 const SHEET_ID = '1auZpGAWqwEJhQlvZslZum4AnwhTahpA-fGjvyltvyCA';
-const SHEET_NAME = ''; // Leave blank to use the first sheet.
-const MASTER_PASSWORD = 'CHANGE_THIS_MASTER_PASSWORD';
+const PASSWORD_COLUMN_NAME = 'Password';
+const EMAIL_SEND_COLUMN_NAME = 'Email_send';
+const EMAIL_SENT_VALUE = 'Send';
+const EMAIL_UNSENT_VALUE = 'unsend';
 const PENDING_VALUE = 'Pending';
+const PASSWORD_LENGTH = 8;
+const PORTAL_URL = 'https://raw.githack.com/007arjungangwar/StudentGradePortal/main/index.html';
 
 function doPost(e) {
   try {
     const request = parseRequest(e);
-    const prn = String(request.prn || '').trim();
-    const password = String(request.password || '');
+    const action = String(request.action || 'login').toLowerCase();
 
-    if (!prn || !password) {
-      return jsonResponse(false, null, 'Please enter both PRN and password.');
+    if (action === 'subjects') {
+      return jsonResponse(true, {
+        subjects: getSubjectNames()
+      }, 'Subjects loaded.');
     }
 
-    if (password !== MASTER_PASSWORD) {
-      return jsonResponse(false, null, 'Invalid PRN or password.');
+    if (action === 'login') {
+      return handleLogin(request);
     }
 
-    const sheet = getTargetSheet();
-    const values = sheet.getDataRange().getDisplayValues();
-
-    if (values.length < 2) {
-      return jsonResponse(false, null, 'The sheet does not contain student records.');
-    }
-
-    const headers = buildHeaders(values[0]);
-    const prnIndex = findPrnColumn(headers);
-
-    if (prnIndex === -1) {
-      return jsonResponse(false, null, 'No PRN column was found in the sheet headers.');
-    }
-
-    const requestedPrn = normalizeValue(prn);
-    const studentRow = values.slice(1).find(function(row) {
-      return normalizeValue(row[prnIndex]) === requestedPrn;
-    });
-
-    if (!studentRow) {
-      return jsonResponse(false, null, 'No student record found for this PRN.');
-    }
-
-    const data = {};
-
-    headers.forEach(function(header, index) {
-      const value = String(studentRow[index] || '').trim();
-      data[header] = value || PENDING_VALUE;
-    });
-
-    return jsonResponse(true, data, 'Student record found.');
+    return jsonResponse(false, null, 'Unknown action.');
   } catch (error) {
     return jsonResponse(false, null, 'Server error: ' + error.message);
   }
 }
 
 function doGet() {
-  return jsonResponse(true, null, 'Student Grade Portal API is running.');
+  return jsonResponse(true, {
+    subjects: getSubjectNames()
+  }, 'Student Grade Portal API is running.');
+}
+
+function handleLogin(request) {
+  const subject = String(request.subject || '').trim();
+  const prn = String(request.prn || '').trim();
+  const password = String(request.password || '');
+
+  if (!subject) {
+    return jsonResponse(false, null, 'Please select a subject.');
+  }
+
+  if (!prn || !password) {
+    return jsonResponse(false, null, 'Please enter both PRN and password.');
+  }
+
+  const sheet = getTargetSheet(subject);
+
+  if (!sheet) {
+    return jsonResponse(false, null, 'Subject not found.');
+  }
+
+  const values = getSheetValues(sheet);
+
+  if (values.length < 2) {
+    return jsonResponse(false, null, 'This subject sheet does not contain student records.');
+  }
+
+  const headers = buildHeaders(values[0]);
+  const prnIndex = findPrnColumn(headers);
+  const passwordIndex = findPasswordColumn(headers);
+
+  if (prnIndex === -1) {
+    return jsonResponse(false, null, 'PRN column not found for this subject.');
+  }
+
+  if (passwordIndex === -1) {
+    return jsonResponse(false, null, 'Password column not found. Please run sendStudentPasswords() first.');
+  }
+
+  const requestedPrn = normalizeValue(prn);
+  const studentRow = values.slice(1).find(function(row) {
+    return normalizeValue(row[prnIndex]) === requestedPrn;
+  });
+
+  if (!studentRow) {
+    return jsonResponse(false, null, 'PRN not found.');
+  }
+
+  const storedPassword = String(studentRow[passwordIndex] || '').trim();
+
+  if (!storedPassword) {
+    return jsonResponse(false, null, 'Password has not been generated for this PRN yet.');
+  }
+
+  if (password !== storedPassword) {
+    return jsonResponse(false, null, 'Password error.');
+  }
+
+  return jsonResponse(true, buildStudentData(sheet.getName(), headers, studentRow), 'Student record found.');
+}
+
+function sendStudentPasswords() {
+  const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+  const results = spreadsheet.getSheets().map(function(sheet) {
+    return sendPasswordsForSheet(sheet);
+  });
+
+  Logger.log(JSON.stringify(results, null, 2));
+  return results;
+}
+
+function sendPasswordsForSheet(sheet) {
+  const result = {
+    subject: sheet.getName(),
+    generated: 0,
+    sent: 0,
+    skippedAlreadySent: 0,
+    skippedNoEmail: 0,
+    errors: []
+  };
+
+  try {
+    if (sheet.getLastRow() < 2) {
+      result.errors.push('No student rows found.');
+      return result;
+    }
+
+    preparePasswordColumns(sheet);
+
+    const values = getSheetValues(sheet);
+    const headers = buildHeaders(values[0]);
+    const prnIndex = findPrnColumn(headers);
+    const emailIndex = findEmailColumn(headers);
+    const nameIndex = findNameColumn(headers);
+    const passwordIndex = findPasswordColumn(headers);
+    const emailSendIndex = findEmailSendColumn(headers);
+
+    if (prnIndex === -1) {
+      result.errors.push('PRN column not found.');
+      return result;
+    }
+
+    if (emailIndex === -1) {
+      result.errors.push('Email column not found.');
+      return result;
+    }
+
+    values.slice(1).forEach(function(row, rowOffset) {
+      const sheetRow = rowOffset + 2;
+      const prn = String(row[prnIndex] || '').trim();
+      const email = String(row[emailIndex] || '').trim();
+      const name = nameIndex === -1 ? '' : String(row[nameIndex] || '').trim();
+      let password = String(row[passwordIndex] || '').trim();
+      let emailStatus = String(row[emailSendIndex] || '').trim();
+
+      if (!prn) {
+        return;
+      }
+
+      if (!password) {
+        password = generatePassword(PASSWORD_LENGTH);
+        sheet.getRange(sheetRow, passwordIndex + 1).setValue(password);
+        result.generated++;
+      }
+
+      if (!emailStatus) {
+        emailStatus = EMAIL_UNSENT_VALUE;
+        sheet.getRange(sheetRow, emailSendIndex + 1).setValue(EMAIL_UNSENT_VALUE);
+      }
+
+      if (isEmailAlreadySent(emailStatus)) {
+        result.skippedAlreadySent++;
+        return;
+      }
+
+      if (!email) {
+        sheet.getRange(sheetRow, emailSendIndex + 1).setValue(EMAIL_UNSENT_VALUE);
+        result.skippedNoEmail++;
+        return;
+      }
+
+      try {
+        MailApp.sendEmail({
+          to: email,
+          subject: 'Student Grade Portal Password - ' + sheet.getName(),
+          body: buildPasswordEmailBody(name, prn, password, sheet.getName())
+        });
+        sheet.getRange(sheetRow, emailSendIndex + 1).setValue(EMAIL_SENT_VALUE);
+        result.sent++;
+      } catch (error) {
+        sheet.getRange(sheetRow, emailSendIndex + 1).setValue(EMAIL_UNSENT_VALUE);
+        result.errors.push('Row ' + sheetRow + ': ' + error.message);
+      }
+    });
+  } catch (error) {
+    result.errors.push(error.message);
+  }
+
+  return result;
+}
+
+function preparePasswordColumns(sheet) {
+  let headers = buildHeaders(getHeaderRow(sheet));
+  let prnIndex = findPrnColumn(headers);
+
+  if (prnIndex === -1) {
+    throw new Error('PRN column not found in ' + sheet.getName() + '.');
+  }
+
+  let passwordIndex = findPasswordColumn(headers);
+
+  if (passwordIndex === -1) {
+    sheet.insertColumnAfter(prnIndex + 1);
+    sheet.getRange(1, prnIndex + 2).setValue(PASSWORD_COLUMN_NAME);
+  }
+
+  headers = buildHeaders(getHeaderRow(sheet));
+  passwordIndex = findPasswordColumn(headers);
+
+  if (passwordIndex === -1) {
+    throw new Error('Could not create Password column in ' + sheet.getName() + '.');
+  }
+
+  const emailSendIndex = findEmailSendColumn(headers);
+
+  if (emailSendIndex === -1) {
+    sheet.insertColumnAfter(passwordIndex + 1);
+    sheet.getRange(1, passwordIndex + 2).setValue(EMAIL_SEND_COLUMN_NAME);
+  }
+}
+
+function getSubjectNames() {
+  return SpreadsheetApp
+    .openById(SHEET_ID)
+    .getSheets()
+    .map(function(sheet) {
+      return sheet.getName();
+    });
+}
+
+function getTargetSheet(subject) {
+  return SpreadsheetApp.openById(SHEET_ID).getSheetByName(subject);
+}
+
+function getHeaderRow(sheet) {
+  return sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getDisplayValues()[0];
+}
+
+function getSheetValues(sheet) {
+  return sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), Math.max(sheet.getLastColumn(), 1)).getDisplayValues();
+}
+
+function buildStudentData(subject, headers, row) {
+  const data = {
+    Subject: subject
+  };
+
+  headers.forEach(function(header, index) {
+    if (isInternalHeader(header)) {
+      return;
+    }
+
+    const value = String(row[index] || '').trim();
+    data[header] = value || PENDING_VALUE;
+  });
+
+  return data;
+}
+
+function buildPasswordEmailBody(name, prn, password, subject) {
+  const greetingName = name || 'Student';
+
+  return [
+    'Hello ' + greetingName + ',',
+    '',
+    'Your Student Grade Portal login details are ready.',
+    '',
+    'Subject: ' + subject,
+    'PRN: ' + prn,
+    'Password: ' + password,
+    '',
+    'Portal link:',
+    PORTAL_URL,
+    '',
+    'Please keep this password private. Anyone with your PRN and password can view your record for this subject.',
+    '',
+    'Regards,',
+    'Student Grade Portal'
+  ].join('\n');
 }
 
 function parseRequest(e) {
@@ -79,19 +304,6 @@ function parseRequest(e) {
   }
 
   return (e && e.parameter) || {};
-}
-
-function getTargetSheet() {
-  const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
-  const sheet = SHEET_NAME
-    ? spreadsheet.getSheetByName(SHEET_NAME)
-    : spreadsheet.getSheets()[0];
-
-  if (!sheet) {
-    throw new Error('Target sheet was not found.');
-  }
-
-  return sheet;
 }
 
 function buildHeaders(headerRow) {
@@ -110,6 +322,55 @@ function findPrnColumn(headers) {
     const normalized = normalizeHeader(header);
     return normalized === 'prn' || normalized.indexOf('prn') !== -1;
   });
+}
+
+function findEmailColumn(headers) {
+  return headers.findIndex(function(header) {
+    const normalized = normalizeHeader(header);
+    return normalized !== normalizeHeader(EMAIL_SEND_COLUMN_NAME)
+      && (normalized === 'email' || normalized === 'emailid' || normalized.indexOf('email') !== -1);
+  });
+}
+
+function findNameColumn(headers) {
+  return headers.findIndex(function(header) {
+    const normalized = normalizeHeader(header);
+    return normalized === 'name' || normalized === 'studentname' || normalized.indexOf('fullname') !== -1;
+  });
+}
+
+function findPasswordColumn(headers) {
+  return headers.findIndex(function(header) {
+    const normalized = normalizeHeader(header);
+    return normalized === 'password' || normalized === 'studentpassword' || normalized === 'personalpassword';
+  });
+}
+
+function findEmailSendColumn(headers) {
+  return headers.findIndex(function(header) {
+    return normalizeHeader(header) === normalizeHeader(EMAIL_SEND_COLUMN_NAME);
+  });
+}
+
+function isInternalHeader(header) {
+  const normalized = normalizeHeader(header);
+  return normalized === normalizeHeader(PASSWORD_COLUMN_NAME)
+    || normalized === normalizeHeader(EMAIL_SEND_COLUMN_NAME);
+}
+
+function isEmailAlreadySent(value) {
+  return normalizeValue(value) === normalizeValue(EMAIL_SENT_VALUE);
+}
+
+function generatePassword(length) {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  let password = '';
+
+  for (let i = 0; i < length; i++) {
+    password += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+  }
+
+  return password;
 }
 
 function normalizeHeader(value) {

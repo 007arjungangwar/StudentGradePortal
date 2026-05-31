@@ -4,20 +4,38 @@ A dynamic student grade portal that uses Google Sheets as the database, Google A
 
 ## Architecture
 
-- Google Sheet: stores student rows and any teacher-managed columns.
-- Google Apps Script: validates PRN + `MASTER_PASSWORD`, detects columns dynamically, and returns the matching row as JSON.
-- Frontend: logs in with PRN/password, stores the session in `sessionStorage`, and generates dashboard cards from whatever columns the sheet returns.
+- Google Sheet: each sheet tab is one subject, for example `Programming in Python (Section 1)`.
+- Google Apps Script: generates per-student passwords, emails unsent students, validates `Subject + PRN + Password`, detects columns dynamically, and returns the matching row as JSON.
+- Frontend: loads subject names from sheet tabs, logs in with subject/PRN/password, stores the session in `sessionStorage`, and generates dashboard cards from whatever columns the sheet returns.
 
 ## Setup
 
 1. Open `Code.gs` in this repo and copy it into your Apps Script project.
-2. Set `MASTER_PASSWORD` in `Code.gs`.
-3. Confirm `SHEET_ID` points to the correct Google Sheet.
-4. Deploy Apps Script as a Web App:
+2. Confirm `SHEET_ID` points to the correct Google Sheet.
+3. Deploy Apps Script as a Web App:
    - Execute as: `Me`
    - Who has access: `Anyone`
-5. Copy the Web App URL into `SCRIPT_URL` in `index.html`.
-6. Open the frontend.
+4. Copy the Web App URL into `SCRIPT_URL` in `index.html`.
+5. Run `sendStudentPasswords()` in Apps Script.
+6. Approve the Google permissions for Sheets and Gmail/Mail when prompted.
+7. Open the frontend.
+
+## Sending Student Passwords
+
+Run this Apps Script function manually:
+
+```js
+sendStudentPasswords()
+```
+
+It will process every sheet tab as a subject:
+
+- Adds `Password` just after the PRN column if it is missing.
+- Adds `Email_send` after `Password` if it is missing.
+- Generates a password only when the password cell is empty.
+- Sends email only when `Email_send` is not `Send`.
+- Marks successful emails as `Send`.
+- Leaves missing/failed emails as `unsend`, so rerunning only retries those rows.
 
 ## Live Preview
 
@@ -35,5 +53,8 @@ https://007arjungangwar.github.io/StudentGradePortal/
 
 - The first row must contain column headers.
 - One header must contain `PRN`, for example `PRN`, `Prn Number`, or `Student PRN`.
+- One header must contain `Email`, for example `Email`, `Email ID`, or `Student Email`.
+- Every sheet tab name becomes a subject option on the login page.
 - Teachers can add, remove, or rename any other columns without frontend code changes.
 - Empty cells are returned as `Pending`.
+- The dashboard does not show internal `Password` or `Email_send` columns.
