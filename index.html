@@ -488,7 +488,7 @@
         }
 
         function showDashboard(data) {
-            const entries = Object.entries(data || {});
+            const entries = getStudentEntries(data);
             const pendingCount = entries.filter(([, value]) => isPending(value)).length;
             const prnEntry = entries.find(([key]) => normalizeKey(key).includes('prn'));
 
@@ -516,6 +516,73 @@
 
             loginPanel.style.display = 'none';
             dashboardPanel.style.display = 'block';
+        }
+
+        function getStudentEntries(data) {
+            if (!data || typeof data !== 'object') {
+                return [];
+            }
+
+            if ('headers' in data && 'values' in data) {
+                return entriesFromHeaderValueShape(data.headers, data.values);
+            }
+
+            if ('values' in data && data.values && typeof data.values === 'object') {
+                return Object.entries(data.values);
+            }
+
+            return Object.entries(data);
+        }
+
+        function entriesFromHeaderValueShape(headersInput, valuesInput) {
+            const headers = parseHeaders(headersInput);
+
+            if (!headers.length && valuesInput && typeof valuesInput === 'object' && !Array.isArray(valuesInput)) {
+                return Object.entries(valuesInput);
+            }
+
+            return headers.map((header, index) => [
+                header,
+                getValueForHeader(valuesInput, header, index)
+            ]);
+        }
+
+        function parseHeaders(headersInput) {
+            if (Array.isArray(headersInput)) {
+                return headersInput.map(String).map((header) => header.trim()).filter(Boolean);
+            }
+
+            if (typeof headersInput === 'string') {
+                return headersInput.split(',').map((header) => header.trim()).filter(Boolean);
+            }
+
+            if (headersInput && typeof headersInput === 'object') {
+                return Object.values(headersInput).map(String).map((header) => header.trim()).filter(Boolean);
+            }
+
+            return [];
+        }
+
+        function getValueForHeader(valuesInput, header, index) {
+            if (Array.isArray(valuesInput)) {
+                return valuesInput[index];
+            }
+
+            if (valuesInput && typeof valuesInput === 'object') {
+                if (Object.prototype.hasOwnProperty.call(valuesInput, header)) {
+                    return valuesInput[header];
+                }
+
+                const normalizedHeader = normalizeKey(header);
+                const matchingKey = Object.keys(valuesInput).find((key) => normalizeKey(key) === normalizedHeader);
+                return matchingKey ? valuesInput[matchingKey] : PENDING_VALUE;
+            }
+
+            if (typeof valuesInput === 'string') {
+                return valuesInput.split(',')[index];
+            }
+
+            return PENDING_VALUE;
         }
 
         function addSummaryPill(text) {
