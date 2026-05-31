@@ -157,6 +157,7 @@ function sendPasswordsForSheet(sheet) {
       const name = nameIndex === -1 ? '' : String(row[nameIndex] || '').trim();
       let password = String(row[passwordIndex] || '').trim();
       let emailStatus = String(row[emailSendIndex] || '').trim();
+      const hadPassword = Boolean(password);
 
       if (!prn) {
         return;
@@ -168,7 +169,7 @@ function sendPasswordsForSheet(sheet) {
         result.generated++;
       }
 
-      if (!emailStatus) {
+      if (!hadPassword || !emailStatus) {
         emailStatus = EMAIL_UNSENT_VALUE;
         sheet.getRange(sheetRow, emailSendIndex + 1).setValue(EMAIL_UNSENT_VALUE);
       }
@@ -284,13 +285,19 @@ function buildPasswordEmailBody(name, prn, password, subject) {
     'PRN: ' + prn,
     'Password: ' + password,
     '',
+    'I have not uploaded the other entries yet, but I will upload them soon.',
+    'Please check again after one or two days. The updated entries will be available here.',
+    'If you have any doubts regarding any marks, please contact me.',
+    'Thanks for your patience.',
+    '',
     'Portal link:',
     PORTAL_URL,
     '',
-    'Please keep this password private. Anyone with your PRN and password can view your record for this subject.',
+    'Please keep this password private. Anyone with your PRN and password can',
+    'view your record for this subject.',
     '',
     'Regards,',
-    'Student Grade Portal'
+    'Arjun'
   ].join('\n');
 }
 

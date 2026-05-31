@@ -34,6 +34,7 @@ It will process every sheet tab as a subject:
 - Adds `Email_send` after `Password` if it is missing.
 - Generates a password only when the password cell is empty.
 - Sends email only when `Email_send` is not `Send`.
+- Treats rows with a blank `Password` as unsent, even if `Email_send` was accidentally copied as `Send`.
 - Marks successful emails as `Send`.
 - Leaves missing/failed emails as `unsend`, so rerunning only retries those rows.
 
