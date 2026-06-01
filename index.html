@@ -631,9 +631,8 @@
 
                     <div>
                         <label for="identifier">PRN / Application ID</label>
-                        <select id="identifier" name="identifier" required disabled>
-                            <option value="">Select subject first</option>
-                        </select>
+                        <input id="identifier" name="identifier" type="text" list="identifierOptions" autocomplete="username" placeholder="Select subject first" required disabled>
+                        <datalist id="identifierOptions"></datalist>
                     </div>
 
                     <div>
@@ -711,7 +710,8 @@
         const dashboardPanel = document.getElementById('dashboardPanel');
         const loginForm = document.getElementById('loginForm');
         const subjectSelect = document.getElementById('subject');
-        const identifierSelect = document.getElementById('identifier');
+        const identifierInput = document.getElementById('identifier');
+        const identifierOptionsList = document.getElementById('identifierOptions');
         const loginButton = document.getElementById('loginButton');
         const refreshButton = document.getElementById('refreshButton');
         const logoutButton = document.getElementById('logoutButton');
@@ -728,6 +728,7 @@
         const performanceCount = document.getElementById('performanceCount');
         const detailCount = document.getElementById('detailCount');
         let identifierLoadToken = 0;
+        let identifierOptions = [];
 
         loginForm.addEventListener('submit', login);
         subjectSelect.addEventListener('change', () => loadIdentifiers(subjectSelect.value.trim()));
@@ -775,7 +776,7 @@
 
         async function loadIdentifiers(subject) {
             const loadToken = ++identifierLoadToken;
-            resetIdentifierSelect(subject ? 'Loading PRN/Application IDs...' : 'Select subject first', true);
+            resetIdentifierField(subject ? 'Loading PRN/Application IDs...' : 'Select subject first', true);
 
             if (!subject) {
                 return;
@@ -796,33 +797,25 @@
                     : [];
 
                 if (!identifiers.length) {
-                    resetIdentifierSelect('No PRN/Application IDs found', true);
+                    resetIdentifierField('No PRN/Application IDs found', true);
                     return;
                 }
 
-                identifierSelect.innerHTML = '<option value="">Select PRN/Application ID</option>';
-
-                identifiers.forEach((identifier) => {
-                    const option = document.createElement('option');
-                    option.value = getIdentifierOptionKey(identifier);
-                    option.dataset.value = identifier.value || '';
-                    option.dataset.type = identifier.type || '';
-                    option.textContent = identifier.label || identifier.value;
-                    identifierSelect.appendChild(option);
-                });
-
-                identifierSelect.disabled = false;
+                identifierOptions = identifiers
+                    .map(normalizeIdentifierOption)
+                    .filter((identifier) => identifier.value);
+                renderIdentifierOptions(identifierOptions);
+                identifierInput.disabled = false;
+                identifierInput.placeholder = 'Type or choose PRN/Application ID';
 
                 const savedLoginId = sessionStorage.getItem('studentLoginId') || sessionStorage.getItem('studentPrn');
                 const savedIdentifierType = sessionStorage.getItem('studentIdentifierType') || '';
-                const savedOption = Array.from(identifierSelect.options).find((option) => {
-                    const optionLoginId = option.dataset.value || option.value;
-                    const optionType = option.dataset.type || '';
-                    return optionLoginId === savedLoginId && (!savedIdentifierType || optionType === savedIdentifierType);
+                const savedOption = identifierOptions.find((identifier) => {
+                    return identifier.value === savedLoginId && (!savedIdentifierType || identifier.type === savedIdentifierType);
                 });
 
                 if (savedOption) {
-                    identifierSelect.value = savedOption.value;
+                    identifierInput.value = savedOption.value;
                 }
             } catch (error) {
                 if (loadToken !== identifierLoadToken) {
@@ -830,38 +823,67 @@
                 }
 
                 console.error(error);
-                resetIdentifierSelect('Unable to load IDs', true);
+                resetIdentifierField('Unable to load IDs', true);
                 showMessage(error.message || 'Unable to load PRN/Application IDs.', 'error');
             }
         }
 
-        function resetIdentifierSelect(label, disabled) {
-            identifierSelect.innerHTML = '';
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = label;
-            identifierSelect.appendChild(option);
-            identifierSelect.disabled = disabled;
+        function resetIdentifierField(label, disabled) {
+            identifierOptions = [];
+            identifierOptionsList.innerHTML = '';
+            identifierInput.value = '';
+            identifierInput.placeholder = label;
+            identifierInput.disabled = disabled;
         }
 
-        function getIdentifierOptionKey(identifier) {
-            return identifier.key || `${identifier.type || 'Identifier'}:${identifier.value || ''}`;
+        function normalizeIdentifierOption(identifier) {
+            return {
+                type: identifier.type || '',
+                value: String(identifier.value || '').trim(),
+                label: identifier.label || identifier.value || ''
+            };
+        }
+
+        function renderIdentifierOptions(identifiers) {
+            identifierOptionsList.innerHTML = '';
+
+            identifiers.forEach((identifier) => {
+                const option = document.createElement('option');
+                option.value = identifier.value;
+                option.label = identifier.label || identifier.value;
+                identifierOptionsList.appendChild(option);
+            });
         }
 
         function getSelectedIdentifier() {
-            const option = identifierSelect.options[identifierSelect.selectedIndex];
+            const enteredValue = identifierInput.value.trim();
 
-            if (!option) {
+            if (!enteredValue) {
                 return {
                     value: '',
                     type: ''
                 };
             }
 
+            const matchingIdentifier = findIdentifierOption(enteredValue);
+
             return {
-                value: String(option.dataset.value || option.value || '').trim(),
-                type: option.dataset.type || ''
+                value: matchingIdentifier ? matchingIdentifier.value : enteredValue,
+                type: matchingIdentifier ? matchingIdentifier.type : ''
             };
+        }
+
+        function findIdentifierOption(value) {
+            const normalizedValue = normalizeIdentifierValue(value);
+
+            return identifierOptions.find((identifier) => {
+                return normalizeIdentifierValue(identifier.value) === normalizedValue
+                    || normalizeIdentifierValue(identifier.label) === normalizedValue;
+            });
+        }
+
+        function normalizeIdentifierValue(value) {
+            return String(value || '').trim().toLowerCase();
         }
 
         async function login(event) {
@@ -1168,7 +1190,7 @@
             sessionStorage.removeItem('studentPrn');
             sessionStorage.removeItem('studentPassword');
             loginForm.reset();
-            resetIdentifierSelect('Select subject first', true);
+            resetIdentifierField('Select subject first', true);
             dashboardPanel.style.display = 'none';
             loginPanel.style.display = 'grid';
             showMessage('You have been logged out.', 'success');
